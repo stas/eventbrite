@@ -15,7 +15,16 @@ class EB {
         'currency',
         'status',
         'custom_header',
-        'custom_footer'
+        'custom_footer',
+        'organizer_name',
+        'organizer_description',
+        'venue_organizer_id',
+        'venue',
+        'adress',
+        'city',
+        'region',
+        'postal_code',
+        'country_code'
     );
     
     // Transient expiration seconds
@@ -188,6 +197,9 @@ class EB {
         foreach ( self::$meta_keys as $k )
             $settings[$k] = get_post_meta( $post_id, $k, true );
         
+        // Add a filter to be able later to populate organizers list
+        $settings['organizers_list'] = apply_filters( 'eventbrite_organizers_list', null );
+        
         // Cache the data
         set_transient( $transient_name, $settings, self::$cache_expiration );
         return $settings;
@@ -221,8 +233,11 @@ class EB {
         
         foreach( self::$meta_keys as $k )
             if( isset( $new_settings[$k] ) )
-                if( in_array( $k, array( 'privacy', 'organizer_id', 'venue_id', 'capacity' ) ) )
-                    update_post_meta( $post_id, $k, intval( $new_settings[$k] ) );
+                if( in_array( $k, array( 'privacy', 'organizer_id', 'venue_id', 'venue_organizer_id', 'capacity' ) ) )
+                    if( $new_settings[$k] != '' )
+                        update_post_meta( $post_id, $k, intval( $new_settings[$k] ) );
+                    else
+                        update_post_meta( $post_id, $k, '' );
                 else if ( in_array( $k, array( 'custom_header', 'custom_footer', ) ))
                     update_post_meta( $post_id, $k, wp_filter_post_kses( $new_settings[$k] ) );
                 else
