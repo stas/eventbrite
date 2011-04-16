@@ -36,6 +36,7 @@ class EB {
     function init() {
         add_action( 'init', array( __CLASS__, 'post_type' ) );
         add_action( 'save_post', array( __CLASS__, 'save' ) );
+        add_action( 'save_post', array( __CLASS__, 'save_ticket' ) );
     }
     
     /**
@@ -90,6 +91,15 @@ class EB {
             array( __CLASS__, 'organizer_box' ),
             self::$post_type
         );
+        
+        // Ticket settings box
+        add_meta_box( 
+            'event_ticket',
+            __( 'Tickets', 'eventbrite' ),
+            array( __CLASS__, 'event_ticket' ),
+            self::$post_type
+        );
+        
         // Custom header
         add_meta_box( 
             'event_header',
@@ -142,6 +152,19 @@ class EB {
         self::template_render(
             'organizer_box',
             self::get_settings( $post->ID )
+        );
+    }
+    
+    /**
+     * event_ticket( $post )
+     * 
+     * Render the ticket meta box
+     * @param Object $post, the post/page object
+     */
+    function event_ticket( $post ) {
+        self::template_render(
+            'ticket_box',
+            self::get_tickets( $post->ID )
         );
     }
     
@@ -206,6 +229,47 @@ class EB {
     }
     
     /**
+     * get_tickets( $post_id )
+     * 
+     * Fetch the tickets for given ID
+     * @param Int $post_id, the ID of the post
+     * @return Mixed $settings, the fetched settings array
+     */
+    function get_tickets( $post_id = null ) {
+        $data = array_fill_keys( 
+            array(
+                // Dummy ticket to skip notices
+                'is_donation',
+                'name',
+                'description',
+                'price',
+                'quantity',
+                'start_sales',
+                'end_sales',
+                'include_fee',
+                'min',
+                'max',
+            )
+        , null );
+        
+        if( !$post_id )
+            return null;
+        
+        $tickets = get_post_meta( $post_id, 'ticket' );
+        $all_tickets = array();
+        
+        if( !empty( $tickets ) )
+            foreach( $tickets as $t )
+                if( $t != null )
+                    $all_tickets[md5( $t )] = maybe_unserialize( $t );
+        
+        // Add a filter to be able later to populate tickets list
+        $data['tickets'] = apply_filters( 'eventbrite_tickets_list', $all_tickets );
+        
+        return $data;
+    }
+    
+    /**
      * save( $post_id )
      * 
      * Save sent data for current $post_id
@@ -217,7 +281,7 @@ class EB {
         $restrict_to = null;
         $new_settings = null;
         
-        if ( isset( $_POST['eventbrite_nonce'] ) && !wp_verify_nonce( $_POST['eventbrite_nonce'], 'eventbrite' ))
+        if ( isset( $_POST['eventbrite_nonce'] ) && !wp_verify_nonce( $_POST['eventbrite_nonce'], 'eventbrite' ) )
             return $post_id;
         
         if ( !current_user_can( 'edit_post', $post_id ) )
@@ -250,6 +314,78 @@ class EB {
     }
     
     /**
+     * save_ticket( $post_id )
+     * 
+     * Save sent data for current $post_id
+     * @param Int $post_id, the ID of the post
+     * @return Int $post_id, the ID of the post
+     */
+    function save_ticket( $post_id ) {
+        $ticket_keys = array(
+            'is_donation',
+            'name',
+            'description',
+            'price',
+            'quantity',
+            'start_sales',
+            'end_sales',
+            'include_fee',
+            'min',
+            'max'
+        );
+        
+        $ticket_data = array();
+        $ticket_to_delete = null;
+        
+        if ( isset( $_POST['eventbrite_ticket_nonce'] ) && !wp_verify_nonce( $_POST['eventbrite_ticket_nonce'], 'eventbrite' ) )
+            return $post_id;
+        
+        if ( !current_user_can( 'edit_post', $post_id ) )
+            return $post_id;
+        
+        if( isset( $_POST['ticket'] ) && !empty( $_POST['ticket'] ) )
+            $new_ticket = $_POST['ticket'];
+        else
+            return $post_id;
+        
+        // Check what to edit
+        if( isset( $new_ticket['ticket_to_delete'] ) && !empty( $new_ticket['ticket_to_delete'] ) )
+            $ticket_to_delete = sanitize_text_field( $new_ticket['ticket_to_delete'] );
+        
+        // Build the sanitized ticket data
+        foreach( $ticket_keys as $k )
+            if( isset( $new_ticket[$k] ) )
+                if( in_array( $k, array( 'quantity', 'min', 'max' ) ) )
+                    if( $new_ticket[$k] != '' )
+                        $ticket_data[$k] = intval( $new_ticket[$k] );
+                    else
+                        $ticket_data[$k] = '';
+                else 
+                    if( in_array( $k, array( 'is_donation', 'include_fee' ) ) )
+                        if( sanitize_key( $k ) == 'on' )
+                            $ticket_data[$k] = 1;
+                        else
+                            $ticket_data[$k] = 0;
+                    else
+                        $ticket_data[$k] = sanitize_text_field( $new_ticket[$k] );
+        // Price should be float
+        $ticket_data['price'] = floatval( $ticket_data['price'] );
+        
+        // Save ticket
+        $ticket_data = maybe_serialize( $ticket_data );
+        
+        if( $ticket_to_delete ) {
+            $tickets = get_post_meta( $post_id, 'ticket' );
+            foreach( $tickets as $t )
+                if( md5( $t ) == $ticket_to_delete )
+                    update_post_meta( $post_id, 'ticket', null, $t );
+        } else
+            add_post_meta( $post_id, 'ticket', $ticket_data );
+        
+        return $post_id;
+    }
+    
+    /**
      * template_render( $name, $vars = null, $echo = true )
      *
      * Helper to load and render templates easily
@@ -258,7 +394,7 @@ class EB {
      * @param Boolean $echo, to echo the results or return as data
      * @return String $data, the resulted data if $echo is `false`
      */
-    function template_render( $name, $vars = null, $echo = true ) {
+    function template_render( $_name, $vars = null, $echo = true ) {
         ob_start();
         if( !empty( $vars ) )
             extract( $vars );
@@ -266,7 +402,7 @@ class EB {
         if( !isset( $path ) )
             $path = dirname( __FILE__ ) . '/templates/';
         
-        include $path . $name . '.php';
+        include $path . $_name . '.php';
         
         $data = ob_get_clean();
         
