@@ -263,6 +263,7 @@ class EB {
                 if( $t != null )
                     $all_tickets[md5( $t )] = maybe_unserialize( $t );
         
+        $data['ticket_fields'] = $data;
         // Add a filter to be able later to populate tickets list
         $data['tickets'] = apply_filters( 'eventbrite_tickets_list', $all_tickets );
         
@@ -334,8 +335,7 @@ class EB {
             'max'
         );
         
-        $ticket_data = array();
-        $ticket_to_delete = null;
+        $new_tickets = null;
         
         if ( isset( $_POST['eventbrite_ticket_nonce'] ) && !wp_verify_nonce( $_POST['eventbrite_ticket_nonce'], 'eventbrite' ) )
             return $post_id;
@@ -343,45 +343,46 @@ class EB {
         if ( !current_user_can( 'edit_post', $post_id ) )
             return $post_id;
         
-        if( isset( $_POST['ticket'] ) && !empty( $_POST['ticket'] ) )
-            $new_ticket = $_POST['ticket'];
+        if( isset( $_POST['tickets'] ) && !empty( $_POST['tickets'] ) )
+            $new_tickets = $_POST['tickets'];
         else
             return $post_id;
         
-        // Check what to edit
-        if( isset( $new_ticket['ticket_to_delete'] ) && !empty( $new_ticket['ticket_to_delete'] ) )
-            $ticket_to_delete = sanitize_text_field( $new_ticket['ticket_to_delete'] );
-        
         // Build the sanitized ticket data
-        foreach( $ticket_keys as $k )
-            if( isset( $new_ticket[$k] ) )
-                if( in_array( $k, array( 'quantity', 'min', 'max' ) ) )
-                    if( $new_ticket[$k] != '' )
-                        $ticket_data[$k] = intval( $new_ticket[$k] );
-                    else
-                        $ticket_data[$k] = '';
-                else 
-                    if( in_array( $k, array( 'is_donation', 'include_fee' ) ) )
-                        if( sanitize_key( $k ) == 'on' )
-                            $ticket_data[$k] = 1;
+        if( $new_tickets ) {
+            // Cleanup the old tickets
+            delete_post_meta( $post_id, 'ticket' );
+            // Parse the new ones
+            foreach ( $new_tickets as $new_ticket ) {
+                $ticket_data = array();
+                
+                // Sanitize the rest
+                foreach ( $ticket_keys as $k )
+                    if( isset( $new_ticket[$k] ) ) 
+                        if( in_array( $k, array( 'quantity', 'min', 'max' ) ) )
+                            if( $new_ticket[$k] != '' )
+                                $ticket_data[$k] = intval( $new_ticket[$k] );
+                            else
+                                $ticket_data[$k] = '';
                         else
-                            $ticket_data[$k] = 0;
-                    else
-                        $ticket_data[$k] = sanitize_text_field( $new_ticket[$k] );
-        // Price should be float
-        $ticket_data['price'] = floatval( $ticket_data['price'] );
-        
-        // Save ticket
-        $ticket_data = maybe_serialize( $ticket_data );
-        
-        if( $ticket_to_delete ) {
-            $tickets = get_post_meta( $post_id, 'ticket' );
-            foreach( $tickets as $t )
-                if( md5( $t ) == $ticket_to_delete )
-                    update_post_meta( $post_id, 'ticket', null, $t );
-        } else
-            add_post_meta( $post_id, 'ticket', $ticket_data );
-        
+                            $ticket_data[$k] = sanitize_text_field( $new_ticket[$k] );
+                
+                // Check checkboxes
+                if( isset( $new_ticket['is_donation'] ) )
+                    $ticket_data['is_donation'] = 1;
+                if( isset( $new_ticket['include_fee'] ) )
+                    $ticket_data['include_fee'] = 1;
+                
+                // Price should be float
+                $ticket_data['price'] = floatval( $ticket_data['price'] );
+                
+                // Save ticket
+                $ticket_data = maybe_serialize( $ticket_data );
+                // Skip empty tickets
+                if( $new_ticket['name'] )
+                    add_post_meta( $post_id, 'ticket', $ticket_data );
+            }
+        }
         return $post_id;
     }
     
