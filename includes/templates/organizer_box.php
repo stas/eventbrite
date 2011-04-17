@@ -23,10 +23,10 @@
         <option value="" <?php selected( $organizer_id, '' ); ?>>
             <?php _e( 'None', 'eventbrite' ); ?>
         </option>
-        <?php if( !empty( $organizers_list ) && $organizer_id ): ?>
+        <?php if( !empty( $organizers_list ) ): ?>
             <?php foreach ( $organizers_list as $o ): ?>
-                <option value="<?php echo $o ?>" <?php selected( $organizer_id, $o ); ?>>
-                    <?php echo $o; ?>
+                <option value="<?php echo $o['id'] ?>" <?php selected( $organizer_id, $o['id'] ); ?>>
+                    <?php echo $o['name']; ?>
                 </option>
             <?php endforeach; ?>
         <?php endif; ?>

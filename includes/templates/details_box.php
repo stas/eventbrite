@@ -82,12 +82,12 @@
 <p>
     <label for="accept_check">
         <input id="accept_check" name="event[accept_check]" type="checkbox" <?php checked( $accept_check, 1 ); ?>/>
-        <strong><?php _e( 'Accept Check', 'eventbrite' ); ?></strong>
+        <strong><?php _e( 'Pay by Check', 'eventbrite' ); ?></strong>
     </label>
 </p>
 <p>
     <label for="instructions_check">
-        <?php _e( 'Instructions For Check', 'eventbrite' ); ?>
+        <?php _e( 'Instructions for Pay by Check', 'eventbrite' ); ?>
     </label>
     <textarea id="instructions_check" name="event[instructions_check]" class="widefat"><?php
         echo $instructions_check;
@@ -96,12 +96,12 @@
 <p>
     <label for="accept_cash">
         <input id="accept_cash" name="event[accept_cash]" type="checkbox" <?php checked( $accept_cash, 1 ); ?>/>
-        <strong><?php _e( 'Accept Cash', 'eventbrite' ); ?></strong>
+        <strong><?php _e( 'Pay with Cash', 'eventbrite' ); ?></strong>
     </label>
 </p>
 <p>
     <label for="instructions_cash">
-        <?php _e( 'Instructions For Cash', 'eventbrite' ); ?>
+        <?php _e( 'Instructions for Pay with Cash', 'eventbrite' ); ?>
     </label>
     <textarea id="instructions_cash" name="event[instructions_cash]" class="widefat"><?php
         echo $instructions_cash;
@@ -110,12 +110,12 @@
 <p>
     <label for="accept_invoice">
         <input id="accept_invoice" name="event[accept_invoice]" type="checkbox" <?php checked( $accept_invoice, 1 ); ?>/>
-        <strong><?php _e( 'Accept Invoice', 'eventbrite' ); ?></strong>
+        <strong><?php _e( 'Send an Invoice', 'eventbrite' ); ?></strong>
     </label>
 </p>
 <p>
     <label for="instructions_invoice">
-        <?php _e( 'Instructions For Invoice', 'eventbrite' ); ?>
+        <?php _e( 'Instructions if an invoice has to be sent', 'eventbrite' ); ?>
     </label>
     <textarea id="instructions_invoice" name="event[instructions_invoice]" class="widefat"><?php
         echo $instructions_invoice;

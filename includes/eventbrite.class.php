@@ -45,7 +45,8 @@ class EB {
      * Static constructor
      */
     function init() {
-        add_action( 'init', array( __CLASS__, 'post_type' ) );
+        if( EBO::get_options( 'check' ) )
+            add_action( 'init', array( __CLASS__, 'post_type' ) );
         add_action( 'save_post', array( __CLASS__, 'save' ) );
         add_action( 'save_post', array( __CLASS__, 'save_ticket' ) );
     }
@@ -134,7 +135,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function details_box( $post ) {
-        self::template_render(
+        template_render(
             'details_box',
             self::get_settings( $post->ID )
         );
@@ -147,7 +148,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function venue_box( $post ) {
-        self::template_render(
+        template_render(
             'venue_box',
             self::get_settings( $post->ID )
         );
@@ -160,7 +161,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function organizer_box( $post ) {
-        self::template_render(
+        template_render(
             'organizer_box',
             self::get_settings( $post->ID )
         );
@@ -173,7 +174,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function event_ticket( $post ) {
-        self::template_render(
+        template_render(
             'ticket_box',
             self::get_tickets( $post->ID )
         );
@@ -186,7 +187,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function header_box( $post ) {
-        self::template_render(
+        template_render(
             'header_box',
             self::get_settings( $post->ID )
         );
@@ -199,7 +200,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function footer_box( $post ) {
-        self::template_render(
+        template_render(
             'footer_box',
             self::get_settings( $post->ID )
         );
@@ -217,25 +218,23 @@ class EB {
         // Check for a cache
         $settings = get_transient( $transient_name );
         
-        if( $settings )
-            return $settings;
-        else
-            $settings = array();
-        
-        $settings['gmt_offset'] = get_option( 'gmt_offset', 'UTC+0' );
-        $settings['currency_list'] = apply_filters( 'eventbrite_currency_list', array( 'USD', 'EUR' ) );
-        
-        if( !$post_id )
-            return $settings;
-        
-        foreach ( self::$meta_keys as $k )
-            $settings[$k] = get_post_meta( $post_id, $k, true );
+        if( !$settings ) {
+            $settings['gmt_offset'] = get_option( 'gmt_offset', 'UTC+0' );
+            $settings['currency_list'] = apply_filters( 'eventbrite_currency_list', array( 'USD', 'EUR' ) );
+            
+            if( !$post_id )
+                return $settings;
+            
+            foreach ( self::$meta_keys as $k )
+                $settings[$k] = get_post_meta( $post_id, $k, true );
+            
+            // Cache the data
+            set_transient( $transient_name, $settings, self::$cache_expiration );
+        }
         
         // Add a filter to be able later to populate organizers list
-        $settings['organizers_list'] = apply_filters( 'eventbrite_organizers_list', null );
+        $settings['organizers_list'] = apply_filters( 'organizers_list', array() );
         
-        // Cache the data
-        set_transient( $transient_name, $settings, self::$cache_expiration );
         return $settings;
     }
     
@@ -402,33 +401,6 @@ class EB {
             }
         }
         return $post_id;
-    }
-    
-    /**
-     * template_render( $name, $vars = null, $echo = true )
-     *
-     * Helper to load and render templates easily
-     * @param String $name, the name of the template
-     * @param Mixed $vars, some variables you want to pass to the template
-     * @param Boolean $echo, to echo the results or return as data
-     * @return String $data, the resulted data if $echo is `false`
-     */
-    function template_render( $_name, $vars = null, $echo = true ) {
-        ob_start();
-        if( !empty( $vars ) )
-            extract( $vars );
-        
-        if( !isset( $path ) )
-            $path = dirname( __FILE__ ) . '/templates/';
-        
-        include $path . $_name . '.php';
-        
-        $data = ob_get_clean();
-        
-        if( $echo )
-            echo $data;
-        else
-            return $data;
     }
 }
 ?>

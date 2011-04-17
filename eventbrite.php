@@ -13,6 +13,9 @@ define( 'EB_WEB_ROOT', WP_PLUGIN_URL . '/' . basename( EB_ROOT ) );
 
 require_once EB_ROOT . '/includes/EBAPI.class.php';
 require_once EB_ROOT . '/includes/eventbrite.class.php';
+require_once EB_ROOT . '/includes/eventbrite_link.class.php';
+require_once EB_ROOT . '/includes/eventbrite_options.class.php';
+require_once EB_ROOT . '/includes/helpers.php';
 
 /**
  * i18n
@@ -23,5 +26,7 @@ function eb_textdomain() {
 add_action( 'init', 'eb_textdomain' );
 
 EB::init();
+EBO::init();
+new EBL();
 
 ?>
