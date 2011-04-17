@@ -13,6 +13,17 @@ class EB {
         'organizer_id',
         'capacity',
         'currency',
+        'accept_paypal',
+        'accept_google',
+        'accept_check',
+        'accept_cash',
+        'accept_invoice',
+        'paypal_email',
+        'google_merchant_id',
+        'google_merchant_key',
+        'instructions_check',
+        'instructions_cash',
+        'instructions_invoice',
         'status',
         'custom_header',
         'custom_footer',
@@ -303,10 +314,17 @@ class EB {
                         update_post_meta( $post_id, $k, intval( $new_settings[$k] ) );
                     else
                         update_post_meta( $post_id, $k, '' );
-                else if ( in_array( $k, array( 'custom_header', 'custom_footer', ) ))
-                    update_post_meta( $post_id, $k, wp_filter_post_kses( $new_settings[$k] ) );
                 else
-                    update_post_meta( $post_id, $k, sanitize_text_field( $new_settings[$k] ) );
+                    if ( in_array( $k, array( 'custom_header', 'custom_footer', ) ) )
+                        update_post_meta( $post_id, $k, wp_filter_post_kses( $new_settings[$k] ) );
+                    else
+                        update_post_meta( $post_id, $k, sanitize_text_field( $new_settings[$k] ) );
+        
+        foreach ( array_slice( self::$meta_keys, 8, 5 ) as $k )
+            if ( !isset( $new_settings[$k] ) )
+                update_post_meta( $post_id, $k, '0' );
+            else
+                update_post_meta( $post_id, $k, '1' );
         
         // Make sure no cached data exists
         delete_transient( self::$post_type . '_' . $post_id );
