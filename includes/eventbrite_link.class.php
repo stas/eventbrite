@@ -60,7 +60,9 @@ class EBL {
      * @return Int $post_id, the ID of the post
      */
     function on_save_post( $post_id ) {
+        // Force cache expiration
         delete_transient( 'organizers_list' );
+        return $post_id;
     }
 }
 ?>
