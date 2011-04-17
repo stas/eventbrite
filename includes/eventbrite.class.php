@@ -233,7 +233,9 @@ class EB {
         }
         
         // Add a filter to be able later to populate organizers list
-        $settings['organizers_list'] = apply_filters( 'organizers_list', array() );
+        $settings['organizers_list'] = apply_filters( 'eventbrite_organizers_list', array() );
+        // Add a filter to be able later to populate venues list
+        $settings['venues_list'] = apply_filters( 'eventbrite_venues_list', array() );
         
         return $settings;
     }

@@ -3,10 +3,10 @@
         <strong><?php _e( 'Related Organizer', 'eventbrite' ); ?></strong>
     </label>
     <select id="venue_organizer_id" name="event[venue_organizer_id]" class="widefat">
-        <?php if( !empty( $organizers_list ) && $venue_organizer_id ): ?>
+        <?php if( !empty( $organizers_list ) ): ?>
             <?php foreach ( $organizers_list as $o ): ?>
-                <option value="<?php echo $o ?>" <?php selected( $venue_organizer_id, $o ); ?>>
-                    <?php echo $o; ?>
+                <option value="<?php echo $o['id'] ?>" <?php selected( $venue_organizer_id, $o['id'] ); ?>>
+                    <?php echo $o['name']; ?>
                 </option>
             <?php endforeach; ?>
         <?php else: ?>
@@ -67,10 +67,10 @@
         <option value="" <?php selected( $venu_id, '' ); ?>>
             <?php _e( 'None', 'eventbrite' ); ?>
         </option>
-        <?php if( !empty( $venues_list ) && $venu_id ): ?>
+        <?php if( !empty( $venues_list ) ): ?>
             <?php foreach ( $venues_list as $v ): ?>
-                <option value="<?php echo $v ?>" <?php selected( $venu_id, $v ); ?>>
-                    <?php echo $v; ?>
+                <option value="<?php echo $v['id'] ?>" <?php selected( $venu_id, $v['id'] ); ?>>
+                    <?php echo $v['name']; ?>
                 </option>
             <?php endforeach; ?>
         <?php endif; ?>
