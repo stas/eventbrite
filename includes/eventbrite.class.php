@@ -138,7 +138,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function details_box( $post ) {
-        template_render(
+        EBO::template_render(
             'details_box',
             self::get_settings( $post->ID )
         );
@@ -151,7 +151,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function venue_box( $post ) {
-        template_render(
+        EBO::template_render(
             'venue_box',
             self::get_settings( $post->ID )
         );
@@ -164,7 +164,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function organizer_box( $post ) {
-        template_render(
+        EBO::template_render(
             'organizer_box',
             self::get_settings( $post->ID )
         );
@@ -177,7 +177,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function event_ticket( $post ) {
-        template_render(
+        EBO::template_render(
             'ticket_box',
             self::get_tickets( $post->ID )
         );
@@ -190,7 +190,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function header_box( $post ) {
-        template_render(
+        EBO::template_render(
             'header_box',
             self::get_settings( $post->ID )
         );
@@ -203,7 +203,7 @@ class EB {
      * @param Object $post, the post/page object
      */
     function footer_box( $post ) {
-        template_render(
+        EBO::template_render(
             'footer_box',
             self::get_settings( $post->ID )
         );
