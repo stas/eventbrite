@@ -1,5 +1,24 @@
 <?php wp_nonce_field( 'eventbrite', 'eventbrite_nonce' ); ?>
-
+<?php if( $eventbrite_error ) : ?>
+    <div id="message" class="updated fade">
+        <p>
+            <strong><?php echo $eventbrite_error->error_type; ?></strong>:
+            <em><?php echo $eventbrite_error->error_message; ?></em>
+        </p>
+    </div>
+<?php endif; ?>
+<p>
+    <label for="eventbrite_ready">
+        <input id="eventbrite_ready" name="event[eventbrite_ready]" type="checkbox" <?php disabled( $event_template, 1 ); ?> <?php checked( $eventbrite_ready, 1 ); ?>/>
+        <strong><?php _e( 'Sync on Eventbrite', 'eventbrite' ); ?></strong>
+    </label>
+</p>
+<p>
+    <label for="event_template">
+        <input id="event_template" name="event[event_template]" type="checkbox" <?php disabled( $eventbrite_ready || $event_id, 1 ); ?> <?php checked( $event_template, 1 ); ?>/>
+        <strong><?php _e( 'Events template', 'eventbrite' ); ?></strong>
+    </label>
+</p>
 <p>
     <label for="start_date">
         <strong><?php _e( 'Start Date', 'eventbrite' ); ?></strong>

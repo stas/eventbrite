@@ -5,6 +5,7 @@ class EB {
     
     // Post type meta keys
     public static $meta_keys = array(
+        'event_id',
         'start_date',
         'end_date',
         'timezone',
@@ -13,6 +14,8 @@ class EB {
         'organizer_id',
         'capacity',
         'currency',
+        'event_template',
+        'eventbrite_ready',
         'accept_paypal',
         'accept_google',
         'accept_check',
@@ -236,7 +239,8 @@ class EB {
         $settings['organizers_list'] = apply_filters( 'eventbrite_organizers_list', array() );
         // Add a filter to be able later to populate venues list
         $settings['venues_list'] = apply_filters( 'eventbrite_venues_list', array() );
-        
+        // Check for any Eventbrite errors
+        $settings['eventbrite_error'] = get_transient( 'eventbrite_error' );
         return $settings;
     }
     
@@ -305,9 +309,6 @@ class EB {
         else
             return $post_id;
         
-        // Convert UTC to GMT for Eventbrite
-        //$new_settings['timezone'] = strtr( $new_settings['timezone'], array( 'UTC' => 'GMT' ) );
-        
         foreach( self::$meta_keys as $k )
             if( isset( $new_settings[$k] ) )
                 if( in_array( $k, array( 'privacy', 'organizer_id', 'venue_id', 'venue_organizer_id', 'capacity' ) ) )
@@ -321,14 +322,18 @@ class EB {
                     else
                         update_post_meta( $post_id, $k, sanitize_text_field( $new_settings[$k] ) );
         
-        foreach ( array_slice( self::$meta_keys, 8, 5 ) as $k )
+        foreach ( array_slice( self::$meta_keys, 9, 7 ) as $k )
             if ( !isset( $new_settings[$k] ) )
                 update_post_meta( $post_id, $k, '0' );
             else
-                update_post_meta( $post_id, $k, '1' );
+                if( $k != 'event_template' || $new_settings['event_template'] != $new_settings['eventbrite_ready'] )
+                    update_post_meta( $post_id, $k, '1' );
         
         // Make sure no cached data exists
         delete_transient( self::$post_type . '_' . $post_id );
+        
+        // Trigger eventbrite save hook
+        do_action( 'eventbrite_save', $post_id, $new_settings['eventbrite_ready'] );
         
         return $post_id;
     }
