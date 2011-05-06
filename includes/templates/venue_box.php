@@ -60,16 +60,16 @@
 <h2 style="text-align: center"><?php _e( 'OR', 'eventbrite' ); ?></h2>
 
 <p>
-    <label for="venu_id">
+    <label for="venue_id">
         <strong><?php _e( 'Choose a registered venue', 'eventbrite' ); ?></strong>
     </label>
-    <select id="venu_id" name="event[venu_id]" class="widefat">
-        <option value="" <?php selected( $venu_id, '' ); ?>>
+    <select id="venue_id" name="event[venue_id]" class="widefat">
+        <option value="" <?php selected( $venue_id, '' ); ?>>
             <?php _e( 'None', 'eventbrite' ); ?>
         </option>
         <?php if( !empty( $venues_list ) ): ?>
             <?php foreach ( $venues_list as $v ): ?>
-                <option value="<?php echo $v['id'] ?>" <?php selected( $venu_id, $v['id'] ); ?>>
+                <option value="<?php echo $v['id'] ?>" <?php selected( $venue_id, $v['id'] ); ?>>
                     <?php echo $v['name']; ?>
                 </option>
             <?php endforeach; ?>

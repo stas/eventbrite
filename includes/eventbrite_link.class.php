@@ -12,6 +12,9 @@ class EBL {
     // Errors cache
     var $errors = array();
     
+    // Error ID cache
+    var $post_id = null;
+    
     /**
      * Static constructor, hooks into EB class
      */
@@ -28,7 +31,9 @@ class EBL {
         add_filter( 'eventbrite_venues_list', array( &$this, 'fill_venues' ) );
         add_filter( 'eventbrite_save', array( &$this, 'publish_event' ), 10, 2 );
         add_filter( 'eventbrite_save_ticket', array( &$this, 'save_ticket' ), 10, 2 );
-        add_action( 'eventbrite_payment_update', array(  &$this, 'payment_update' ) );
+        add_action( 'eventbrite_event_update', array(  &$this, 'payment_update' ) );
+        add_action( 'eventbrite_event_update', array(  &$this, 'organizer_update' ), 10, 2 );
+        add_action( 'eventbrite_event_update', array(  &$this, 'venue_update' ), 10, 2 );
         add_action( 'save_post', array( &$this, 'on_save_post' ) );
     }
     
@@ -96,6 +101,8 @@ class EBL {
     function publish_event( $post_id, $yes ) {
         $event = array();
         
+        $this->post_id = $post_id;
+        
         // Ask for $post_id and user confirmation first
         if( !$post_id || !$yes )
             return;
@@ -137,7 +144,7 @@ class EBL {
         $this->saveErrors( $this->api->getError() );
         
         // Add a payment update callback;
-        do_action( 'eventbrite_payment_update', $event_meta );
+        do_action( 'eventbrite_event_update', $event_meta, $post_id );
     }
     
     /**
@@ -210,6 +217,76 @@ class EBL {
     }
     
     /**
+     * organizer_update( $event_data, $post_id )
+     * 
+     * Try to update event organizer details
+     * @param Mixed $event_data, event details
+     * @param Int $post_id, the post object ID
+     */
+    function organizer_update( $event_data, $post_id ) {
+        // If the event was not published yet, cancel update
+        if( !$event_data['event_id'] )
+            return;
+        
+        $response = null;
+        
+        $organizer_details = array();
+        $organizer_details['id'] = $event_data['organizer_id'];
+        $organizer_details['name'] = $event_data['organizer_name'];
+        $organizer_details['description'] = $event_data['organizer_description'];
+        
+        if( $event_data['organizer_id'] )
+            $this->api->organizer_update( $organizer_details );
+        else {
+            unset( $organizer_details['id'] );
+            $response = $this->api->organizer_new( $organizer_details );
+            if( !$this->api->getError() )
+                update_post_meta( $post_id, 'organizer_id', $response->process->id );
+        }
+        
+        // Save the error if any
+        $this->saveErrors( $this->api->getError() );
+    }
+    
+    /**
+     * venue_update( $event_data, $post_id )
+     * 
+     * Try to update event venue details
+     * @param Mixed $event_data, event details
+     * @param Int $post_id, the post object ID
+     */
+    function venue_update( $event_data, $post_id ) {
+        // If the event was not published yet, cancel update
+        if( !$event_data['event_id'] )
+            return;
+        
+        $response = null;
+        
+        $venue_details = array();
+        $venue_details['id'] = $event_data['venue_id'];
+        foreach ( array_slice( EB::$meta_keys, 28, 7 ) as $k )
+            $venue_details[$k] = $event_data[$k];
+        
+        $venue_details['organizer_id'] = $event_data['venue_organizer_id'];
+        unset( $venue_details['venue_organizer_id'] );
+        
+        if( $event_data['venue_id'] ) {
+            unset( $venue_details['organizer_id'] );
+            $this->api->venue_update( $venue_details );
+        }
+        else {
+            unset( $venue_details['id'] );
+            $response = $this->api->venue_new( $venue_details );
+            
+            if( !$this->api->getError() )
+                update_post_meta( $post_id, 'venue_id', $response->process->id );
+        }
+        
+        // Save the error if any
+        $this->saveErrors( $this->api->getError() );
+    }
+    
+    /**
      * on_save_post( $post_id )
      * 
      * Save sent data for current $post_id
@@ -225,7 +302,7 @@ class EBL {
     }
     
     /**
-     * saveErrors()
+     * saveErrors( $error )
      *
      * Will save errors if any
      * @param Mixed $error, an error object
@@ -233,9 +310,9 @@ class EBL {
     function saveErrors( $error ) {
         if( $error ) {
             $this->errors[] = $error;
-            
             // Update our transient if any erorrs occur
-            set_transient( 'eventbrite_errors', $this->errors, self::$cache_expiration );
+            if( $this->post_id )
+                set_transient( 'eventbrite_errors' . $this->post_id, $this->errors, self::$cache_expiration );
         }
     }
 }
