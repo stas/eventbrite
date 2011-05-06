@@ -24,6 +24,7 @@ class EBL {
         add_filter( 'eventbrite_organizers_list', array( &$this, 'fill_organizers' ) );
         add_filter( 'eventbrite_venues_list', array( &$this, 'fill_venues' ) );
         add_filter( 'eventbrite_save', array( &$this, 'publish_event' ), 10, 2 );
+        add_filter( 'eventbrite_save_ticket', array( &$this, 'save_ticket' ), 10, 2 );
         add_action( 'save_post', array( __CLASS__, 'on_save_post' ) );
     }
     
@@ -129,6 +130,54 @@ class EBL {
         }
         // Save the error if any
         set_transient( 'eventbrite_error', $this->api->getError(), self::$cache_expiration );
+    }
+    
+    /**
+     * save_ticket( $ticket, $post_id )
+     *
+     * Saves event tickets
+     * @param Mixed $ticket, the ticket data
+     * @param Int $post_id, the ID of the post
+     * @return Mixed ticket data
+     */
+    function save_ticket( $ticket, $post_id ) {
+        $event_id = get_post_meta( $post_id, 'event_id', true );
+        $response = null;
+        
+        delete_transient( 'eventbrite_error' );
+        
+        // If the event is not synced, skip it
+        if( !$event_id )
+            return $ticket;
+        
+        // Donations do not require price, quantity, min, max
+        if( $ticket['is_donation'] ) {
+            unset( $ticket['price'] );
+            unset( $ticket['quantity'] );
+            unset( $ticket['min'] );
+            unset( $ticket['max'] );
+        }
+        
+        // Update/add a ticket
+        if( $ticket['ticket_id'] != 0 ) {
+            $ticket['id'] = $ticket['ticket_id'];
+            unset( $ticket['ticket_id'] );
+            $response = $this->api->ticket_update( $ticket );
+        }
+        else {
+            unset( $ticket['ticket_id'] );
+            $ticket['event_id'] = $event_id;
+            $response = $this->api->ticket_new( $ticket );
+        }
+        
+        // Check the response
+        if( !$this->api->getError() )
+            $ticket['ticket_id'] = $response->process->id;
+        
+        // Save the error if any
+        set_transient( 'eventbrite_error', $this->api->getError(), self::$cache_expiration );
+        
+        return $ticket;
     }
     
     /**

@@ -240,7 +240,7 @@ class EB {
         // Add a filter to be able later to populate venues list
         $settings['venues_list'] = apply_filters( 'eventbrite_venues_list', array() );
         // Check for any Eventbrite errors
-        $settings['eventbrite_error'] = get_transient( 'eventbrite_error' );
+        $settings['eventbrite_error'][] = get_transient( 'eventbrite_error' );
         return $settings;
     }
     
@@ -255,6 +255,7 @@ class EB {
         $data = array_fill_keys( 
             array(
                 // Dummy ticket to skip notices
+                'ticket_id',
                 'is_donation',
                 'name',
                 'description',
@@ -347,6 +348,7 @@ class EB {
      */
     function save_ticket( $post_id ) {
         $ticket_keys = array(
+            'ticket_id',
             'is_donation',
             'name',
             'description',
@@ -383,7 +385,7 @@ class EB {
                 // Sanitize the rest
                 foreach ( $ticket_keys as $k )
                     if( isset( $new_ticket[$k] ) ) 
-                        if( in_array( $k, array( 'quantity', 'min', 'max' ) ) )
+                        if( in_array( $k, array( 'ticket_id', 'quantity', 'min', 'max' ) ) )
                             if( $new_ticket[$k] != '' )
                                 $ticket_data[$k] = intval( $new_ticket[$k] );
                             else
@@ -400,11 +402,13 @@ class EB {
                 // Price should be float
                 $ticket_data['price'] = floatval( $ticket_data['price'] );
                 
-                // Save ticket
-                $ticket_data = maybe_serialize( $ticket_data );
-                // Skip empty tickets
-                if( $new_ticket['name'] )
+                // Save ticket, Skip empty tickets
+                if( $ticket_data['name'] ) {
+                    // Filter for ticket data
+                    $ticket_data = apply_filters( 'eventbrite_save_ticket', $ticket_data, $post_id );
+                    $ticket_data = maybe_serialize( $ticket_data );
                     add_post_meta( $post_id, 'ticket', $ticket_data );
+                }
             }
         }
         return $post_id;

@@ -1,6 +1,6 @@
 <?php
     wp_nonce_field( 'eventbrite', 'eventbrite_ticket_nonce' );
-    $ticket_id = 0;
+    $tid = 0;
 ?>
 <ul class="tickets">
     <li style="width: 30%; float: left;">
@@ -11,10 +11,9 @@
             <li style="width: 30%; float: left;">
                 <?php
                     // Reset all variables
-                    foreach( $ticket_fields as $k => $v )
-                        unset( $$k );
+                    extract( $ticket_fields );
                     
-                    $ticket_id++;
+                    $tid++;
                     ob_start();
                     extract( $t );
                     include 'ticket.php';
