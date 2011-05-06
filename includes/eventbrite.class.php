@@ -339,6 +339,9 @@ class EB {
         // Trigger eventbrite save hook
         do_action( 'eventbrite_save', $post_id, $new_settings['eventbrite_ready'] );
         
+        // Check if the template file is on place
+        EBO::check_template();
+        
         return $post_id;
     }
     

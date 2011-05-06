@@ -15,6 +15,8 @@ require_once EB_ROOT . '/includes/EBAPI.class.php';
 require_once EB_ROOT . '/includes/eventbrite.class.php';
 require_once EB_ROOT . '/includes/eventbrite_link.class.php';
 require_once EB_ROOT . '/includes/eventbrite_options.class.php';
+require_once EB_ROOT . '/includes/eventbrite_widget.class.php';
+require_once EB_ROOT . '/includes/eventbrite_template.class.php';
 
 /**
  * i18n
@@ -26,6 +28,7 @@ add_action( 'init', 'eb_textdomain' );
 
 EB::init();
 EBO::init();
+EBT::init();
 new EBL();
 
 ?>

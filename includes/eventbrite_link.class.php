@@ -29,6 +29,7 @@ class EBL {
         
         add_filter( 'eventbrite_organizers_list', array( &$this, 'fill_organizers' ) );
         add_filter( 'eventbrite_venues_list', array( &$this, 'fill_venues' ) );
+        add_filter( 'eventbrite_widget_events', array( &$this, 'fill_events' ) );
         add_filter( 'eventbrite_save', array( &$this, 'publish_event' ), 10, 2 );
         add_filter( 'eventbrite_save_ticket', array( &$this, 'save_ticket' ), 10, 2 );
         add_action( 'eventbrite_event_update', array(  &$this, 'payment_update' ) );
@@ -92,6 +93,33 @@ class EBL {
     }
     
     /**
+     * fill_events( $events )
+     * 
+     * Populate $events data from Eventbrite
+     * @param Mixed $events the initial data
+     * @return Mixed filled data
+     */
+    function fill_events( $events ) {
+        // Check for cached data
+        $events_list = get_transient( 'events_list' );
+        if( $events_list )
+            return $events_list;
+        
+        $results = array();
+        $query = $this->api->user_list_events( array( 'event_statuses' => 'live,started' ) );
+        if( !$this->api->getError() )
+            foreach ( $query->events as $v )
+                $results[] = get_object_vars( $v->event );
+        
+        $events = array_merge( $events, $results );
+        
+        // Do some caching
+        set_transient( 'events_list', $events, self::$cache_expiration );
+        
+        return $venues;
+    }
+    
+    /**
      * publish_event( $post_id, $yes )
      * 
      * Try to publish/update the event if $yes is true
@@ -143,7 +171,7 @@ class EBL {
         // Save the error if any
         $this->saveErrors( $this->api->getError() );
         
-        // Add a payment update callback;
+        // Register an update hook
         do_action( 'eventbrite_event_update', $event_meta, $post_id );
     }
     

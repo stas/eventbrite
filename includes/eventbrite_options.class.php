@@ -71,6 +71,19 @@ class EBO {
     }
     
     /**
+     * check_template()
+     *
+     * Checks if current theme has the template file for this post type
+     */
+    function check_template() {
+        $template_name = 'single-event.php';
+        $source_template_file = dirname( __FILE__ ) .'/templates/' . $template_name;
+        $theme_folder = get_stylesheet_directory();
+        if( !file_exists( $theme_folder . '/' . $template_name ) )
+            copy( $source_template_file, $theme_folder . '/' . $template_name );
+    }
+    
+    /**
      * template_render( $name, $vars = null, $echo = true )
      *
      * Helper to load and render templates easily
