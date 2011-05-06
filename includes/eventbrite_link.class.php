@@ -9,6 +9,9 @@ class EBL {
     // Transient expiration seconds
     public static $cache_expiration = 0;
     
+    // Errors cache
+    var $errors = array();
+    
     /**
      * Static constructor, hooks into EB class
      */
@@ -25,7 +28,8 @@ class EBL {
         add_filter( 'eventbrite_venues_list', array( &$this, 'fill_venues' ) );
         add_filter( 'eventbrite_save', array( &$this, 'publish_event' ), 10, 2 );
         add_filter( 'eventbrite_save_ticket', array( &$this, 'save_ticket' ), 10, 2 );
-        add_action( 'save_post', array( __CLASS__, 'on_save_post' ) );
+        add_action( 'eventbrite_payment_update', array(  &$this, 'payment_update' ) );
+        add_action( 'save_post', array( &$this, 'on_save_post' ) );
     }
     
     /**
@@ -92,8 +96,6 @@ class EBL {
     function publish_event( $post_id, $yes ) {
         $event = array();
         
-        delete_transient( 'eventbrite_error' );
-        
         // Ask for $post_id and user confirmation first
         if( !$post_id || !$yes )
             return;
@@ -125,11 +127,17 @@ class EBL {
         }
         else {
             $response = $this->api->event_new( $event );
-            if( !$this->api->getError() )
+            if( !$this->api->getError() ) {
+                $event['event_id'] = $response->process->id;
                 update_post_meta( $post_id, 'event_id', $response->process->id );
+            }
         }
+        
         // Save the error if any
-        set_transient( 'eventbrite_error', $this->api->getError(), self::$cache_expiration );
+        $this->saveErrors( $this->api->getError() );
+        
+        // Add a payment update callback;
+        do_action( 'eventbrite_payment_update', $event_meta );
     }
     
     /**
@@ -143,8 +151,6 @@ class EBL {
     function save_ticket( $ticket, $post_id ) {
         $event_id = get_post_meta( $post_id, 'event_id', true );
         $response = null;
-        
-        delete_transient( 'eventbrite_error' );
         
         // If the event is not synced, skip it
         if( !$event_id )
@@ -175,9 +181,32 @@ class EBL {
             $ticket['ticket_id'] = $response->process->id;
         
         // Save the error if any
-        set_transient( 'eventbrite_error', $this->api->getError(), self::$cache_expiration );
+        $this->saveErrors( $this->api->getError() );
         
         return $ticket;
+    }
+    
+    /**
+     * payment_update( $event_data )
+     *
+     * Try to update event payment details
+     * @param Mixed $event_data, event details
+     */
+    function payment_update( $event_data ) {
+        // If the event was not published yet, cancel update
+        if( !$event_data['event_id'] )
+            return;
+        
+        $payment_options = array();
+        $payment_options['event_id'] = $event_data['event_id'];
+        
+        foreach ( array_slice( EB::$meta_keys, 11, 10 ) as $k )
+            $payment_options[$k] = $event_data[$k];
+        
+        $this->api->payment_update( $payment_options );
+        
+        // Save the error if any
+        $this->saveErrors( $this->api->getError() );
     }
     
     /**
@@ -191,7 +220,23 @@ class EBL {
         // Force cache expiration
         delete_transient( 'organizers_list' );
         delete_transient( 'venues_list' );
+        
         return $post_id;
+    }
+    
+    /**
+     * saveErrors()
+     *
+     * Will save errors if any
+     * @param Mixed $error, an error object
+     */
+    function saveErrors( $error ) {
+        if( $error ) {
+            $this->errors[] = $error;
+            
+            // Update our transient if any erorrs occur
+            set_transient( 'eventbrite_errors', $this->errors, self::$cache_expiration );
+        }
     }
 }
 ?>

@@ -1,7 +1,7 @@
 <?php wp_nonce_field( 'eventbrite', 'eventbrite_nonce' ); ?>
-<?php if( !is_array( $eventbrite_error ) ) : ?>
+<?php if( is_array( $eventbrite_errors ) ) : ?>
     <div id="message" class="updated fade">
-    <?php foreach ( $eventbrite_error as $e ): var_dump( $eventbrite_error ); ?>
+    <?php foreach ( $eventbrite_errors as $e ): ?>
         <p>
             <strong><?php echo $e->error_type; ?></strong>:
             <em><?php echo $e->error_message; ?></em>

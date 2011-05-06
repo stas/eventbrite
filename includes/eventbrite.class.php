@@ -240,7 +240,7 @@ class EB {
         // Add a filter to be able later to populate venues list
         $settings['venues_list'] = apply_filters( 'eventbrite_venues_list', array() );
         // Check for any Eventbrite errors
-        $settings['eventbrite_error'][] = get_transient( 'eventbrite_error' );
+        $settings['eventbrite_errors'] = get_transient( 'eventbrite_errors' );
         return $settings;
     }
     
@@ -298,6 +298,9 @@ class EB {
         $file_id = null;
         $restrict_to = null;
         $new_settings = null;
+        
+        // Delete any previous errors
+        delete_transient( 'eventbrite_errors' );
         
         if ( isset( $_POST['eventbrite_nonce'] ) && !wp_verify_nonce( $_POST['eventbrite_nonce'], 'eventbrite' ) )
             return $post_id;
