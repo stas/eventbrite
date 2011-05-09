@@ -324,6 +324,7 @@ class EBL {
     function on_save_post( $post_id ) {
         // Force cache expiration
         delete_transient( 'organizers_list' );
+        delete_transient( 'events_list' );
         delete_transient( 'venues_list' );
         
         return $post_id;

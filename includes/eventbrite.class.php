@@ -3,6 +3,9 @@ class EB {
     // Our post type
     public static $post_type = 'event';
     
+    // Our post type archive slug
+    public static $post_type_slug = 'events-archive';
+    
     // Post type meta keys
     public static $meta_keys = array(
         'event_id',
@@ -72,7 +75,8 @@ class EB {
             'rewrite' => array( 'slug' => self::$post_type ),
             'supports' => array( 'title', 'editor' ),
             'register_meta_box_cb' => array( __CLASS__, 'meta_boxes' ),
-            'show_ui' => true
+            'show_ui' => true,
+            'has_archive' => self::$post_type_slug
         ) );
     }
     
