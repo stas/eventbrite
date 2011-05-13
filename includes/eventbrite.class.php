@@ -6,6 +6,9 @@ class EB {
     // Our post type archive slug
     public static $post_type_slug = 'events-archive';
     
+    // Our post type taxonomy, like tags
+    public static $post_type_taxonomy = 'location';
+    
     // Post type meta keys
     public static $meta_keys = array(
         'event_id',
@@ -64,20 +67,41 @@ class EB {
      */
     function post_type() {
         register_post_type( self::$post_type, array(
-            'labels' => array(
-                'name' => __( 'Events', 'eventbrite' ),
-                'singular_name' => __( 'Event', 'eventbrite' ),
-                'add_new_item' => __( 'New Event', 'eventbrite' ),
-                'edit_item' => __( 'Edit Event', 'eventbrite' ),
-            ),
             'public' => true,
             'map_meta_cap' => true,
             'rewrite' => array( 'slug' => self::$post_type ),
             'supports' => array( 'title', 'editor' ),
             'register_meta_box_cb' => array( __CLASS__, 'meta_boxes' ),
             'show_ui' => true,
-            'has_archive' => self::$post_type_slug
+            'has_archive' => self::$post_type_slug,
+            'labels' => array(
+                'name' => __( 'Events', 'eventbrite' ),
+                'singular_name' => __( 'Event', 'eventbrite' ),
+                'add_new_item' => __( 'New Event', 'eventbrite' ),
+                'edit_item' => __( 'Edit Event', 'eventbrite' ),
+            )
         ) );
+        
+        register_taxonomy( self::$post_type_taxonomy, array( self::$post_type ), array(
+            'hierarchical' => true,
+            'show_ui' => true,
+            'query_var' => true,
+            'rewrite' => array( 'slug' => self::$post_type_taxonomy ),
+            'labels' => array(
+                'name' => _x( 'Locations', 'taxonomy for events location/city', 'eventbrite' ),
+                'singular_name' => _x( 'Location', 'taxonomy for events location/city', 'eventbrite' ),
+                'all_items' => __( 'All Locations', 'eventbrite' ),
+                'edit_item' => __( 'Edit Location', 'eventbrite' ),
+                'update_item' => __( 'Update Location', 'eventbrite' ),
+                'add_new_item' => __( 'New Location', 'eventbrite' ),
+                'new_item_name' => __( 'New Location Name', 'eventbrite' ),
+                'separate_items_with_commas' => __( 'Separate locations with commas', 'eventbrite' ),
+                'add_or_remove_items' => __( 'Add or Remove Locations', 'eventbrite' ),
+                'choose_from_most_used' => __( 'Choose from the most used locations', 'eventbrite' ),
+                'parent_item' => __( 'Parent Location/State', 'eventbrite' ),
+                'parent_item_colon' => __( 'Parent Location/State:', 'eventbrite' )
+            )
+        ));
     }
     
     /**
