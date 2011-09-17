@@ -75,7 +75,7 @@ class EB {
             'public' => true,
             'map_meta_cap' => true,
             'rewrite' => array( 'slug' => self::$post_type ),
-            'supports' => array( 'title', 'editor', 'thumbnail' ),
+            'supports' => array( 'title', 'editor', 'thumbnail', 'author' ),
             'register_meta_box_cb' => array( __CLASS__, 'meta_boxes' ),
             'show_ui' => true,
             'has_archive' => self::$post_type_slug,
