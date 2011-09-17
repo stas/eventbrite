@@ -12,7 +12,8 @@ define( 'EB_VERSION', '0.1' );
 define( 'EB_ROOT', dirname( __FILE__ ) );
 define( 'EB_WEB_ROOT', WP_PLUGIN_URL . '/' . basename( EB_ROOT ) );
 
-require_once EB_ROOT . '/includes/EBAPI.class.php';
+if ( !class_exists( 'EBAPI' ) )
+    require_once EB_ROOT . '/includes/EBAPI.class.php';
 require_once EB_ROOT . '/includes/eventbrite.class.php';
 require_once EB_ROOT . '/includes/eventbrite_link.class.php';
 require_once EB_ROOT . '/includes/eventbrite_options.class.php';
