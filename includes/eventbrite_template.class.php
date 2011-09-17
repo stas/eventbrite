@@ -26,7 +26,7 @@ class EBT {
      */
     function get_event( $post_id ) {
         $event_data = EB::get_settings( $post_id );
-        return apply_filters( 'get_event', $event_data );
+        return apply_filters( 'get_event', $event_data, $post_id );
     }
 }
 ?>

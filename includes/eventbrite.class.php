@@ -6,8 +6,11 @@ class EB {
     // Our post type archive slug
     public static $post_type_slug = 'events-archive';
     
-    // Our post type taxonomy, like tags
+    // Our post type taxonomy
     public static $post_type_taxonomy = 'location';
+    
+    // Our category taxonomy
+    public static $post_type_cat = 'eventcat';
     
     // Post type meta keys
     public static $meta_keys = array(
@@ -58,6 +61,8 @@ class EB {
             add_action( 'init', array( __CLASS__, 'post_type' ) );
         add_action( 'save_post', array( __CLASS__, 'save' ) );
         add_action( 'save_post', array( __CLASS__, 'save_ticket' ) );
+        add_action( 'init', array( __CLASS__, 'assets' ) );
+        add_action( 'single_template', array( __CLASS__, 'load_template' ) );
     }
     
     /**
@@ -70,7 +75,7 @@ class EB {
             'public' => true,
             'map_meta_cap' => true,
             'rewrite' => array( 'slug' => self::$post_type ),
-            'supports' => array( 'title', 'editor' ),
+            'supports' => array( 'title', 'editor', 'thumbnail' ),
             'register_meta_box_cb' => array( __CLASS__, 'meta_boxes' ),
             'show_ui' => true,
             'has_archive' => self::$post_type_slug,
@@ -102,6 +107,58 @@ class EB {
                 'parent_item_colon' => __( 'Parent Location/State:', 'eventbrite' )
             )
         ));
+        
+        register_taxonomy( self::$post_type_cat, self::$post_type, array(
+            'label' => __( 'Events Category', 'eventbrite' ),
+            'show_ui' => true,
+            'query_var' => true,
+            'hierarchical' => true,
+            'rewrite' => array( 'slug' => 'event-category' ),
+        ));
+    }
+    
+    
+    /**
+     * Hooks into `edit_post` on `post_type` event to load the required enqueues
+     */
+    function assets() {
+        wp_register_script(
+            'jquery-datepicker-slider',
+            EB_WEB_ROOT . '/assets/js/jquery-ui-custom/jquery-ui-1.8.13.custom.min.js',
+            array( 'jquery' ),
+            '1.8.13'
+        );
+        wp_register_script(
+            'timepicker',
+            EB_WEB_ROOT . '/assets/js/timepicker/jquery-ui-timepicker-addon.js',
+            array( 'jquery', 'jquery-datepicker-slider' ),
+            '0.9.5'
+        );
+        
+        wp_register_style(
+            'jquery-datepicker-slider-css',
+            EB_WEB_ROOT . '/assets/js/jquery-ui-custom/smoothness/jquery-ui-1.8.13.custom.css',
+            array(),
+            '1.8.13'
+        );
+        
+        if ( !isset( $_GET['post'] ) || get_post_type( $_GET['post'] ) != self::$post_type )
+            return;
+        
+        wp_enqueue_script(
+            'eventbrite-admin',
+            EB_WEB_ROOT . '/assets/js/eventbrite-admin.js',
+            array( 'timepicker', 'jquery-datepicker-slider' ),
+            EB_VERSION,
+            true
+        );
+         
+        wp_enqueue_style(
+            'timepicker',
+            EB_WEB_ROOT . '/assets/js/timepicker/jquery-ui-timepicker-addon.css',
+            array( 'jquery-datepicker-slider-css' ),
+            '0.9.5'
+        );
     }
     
     /**
@@ -156,6 +213,15 @@ class EB {
             __( 'Custom Footer', 'eventbrite' ),
             array( __CLASS__, 'footer_box' ),
             self::$post_type
+        );
+        
+        // Event template
+        add_meta_box( 
+            'event_template',
+            __( 'Template', 'eventbrite' ),
+            array( __CLASS__, 'event_template' ),
+            self::$post_type,
+            'side'
         );
     }
     
@@ -238,6 +304,40 @@ class EB {
     }
     
     /**
+     * event_template( $post )
+     * 
+     * Render the template selector meta box
+     * @param Object $post, the post/page object
+     */
+    function event_template( $post ) { 
+        EBO::template_render(
+            'event_template',
+            self::get_settings( $post->ID )
+        );
+    }
+    
+    /**
+     * load_template( $template )
+     * This will load the event post template if any
+     *
+     * @param String $template, initial template path
+     * @return String, new template path
+     */
+    function load_template( $template ) {
+        global $wp_query;
+        $post = $wp_query->get_queried_object();
+        if ( $post ) {
+            $post_template = get_post_meta( $post->ID, '_post_template', true );
+            if( !empty( $post_template ) && $post_template != 'default' ) {
+                $template = get_stylesheet_directory() . "/{$post_template}";
+                if( !file_exists( $template ) )
+                    $template = get_template_directory() . "/{$post_template}";
+            }
+        }
+        return $template;
+    }
+    
+    /**
      * get_settings( $post_id )
      * 
      * Fetch the settings for given ID
@@ -263,6 +363,8 @@ class EB {
             set_transient( $transient_name, $settings, self::$cache_expiration );
         }
         
+        // Get post template
+        $settings['post_template'] = get_post_meta( $post_id, '_post_template', true );
         // Add a filter to be able later to populate organizers list
         $settings['organizers_list'] = apply_filters( 'eventbrite_organizers_list', array() );
         // Add a filter to be able later to populate venues list
@@ -361,6 +463,10 @@ class EB {
                 if( $k != 'event_template' || $new_settings['event_template'] != $new_settings['eventbrite_ready'] )
                     update_post_meta( $post_id, $k, '1' );
         
+        // Save post template
+        if( isset( $_POST['post_template'] ) )
+            update_post_meta( $post_id, '_post_template', sanitize_text_field( $_POST['post_template'] ) );
+        
         // Make sure no cached data exists
         delete_transient( self::$post_type . '_' . $post_id );
         
@@ -434,7 +540,7 @@ class EB {
                     $ticket_data['include_fee'] = 1;
                 
                 // Price should be float
-                $ticket_data['price'] = floatval( $ticket_data['price'] );
+                $ticket_data['price'] = esc_attr( $ticket_data['price'] );
                 
                 // Save ticket, Skip empty tickets
                 if( $ticket_data['name'] ) {

@@ -5,7 +5,16 @@ class EBO {
         'eventbrite_app_key',
         'eventbrite_user_key',
         'eventbrite_user_email',
-        'eventbrite_user_pass'
+        'eventbrite_user_pass',
+        'eventbrite_background_color',
+        'eventbrite_text_color',
+        'eventbrite_link_color',
+        'eventbrite_title_text_color',
+        'eventbrite_box_background_color',
+        'eventbrite_box_text_color',
+        'eventbrite_box_border_color',
+        'eventbrite_box_header_background_color',
+        'eventbrite_box_header_text_color'
     );
     
     /**

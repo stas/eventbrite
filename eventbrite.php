@@ -8,6 +8,7 @@ Version: 0.1
 Author URI: http://stas.nerd.ro/
 */
 
+define( 'EB_VERSION', '0.1' );
 define( 'EB_ROOT', dirname( __FILE__ ) );
 define( 'EB_WEB_ROOT', WP_PLUGIN_URL . '/' . basename( EB_ROOT ) );
 

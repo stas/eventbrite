@@ -152,6 +152,10 @@ class EBL {
         foreach ( array_slice( EB::$meta_keys, 1, 8 ) as $k )
             $event[$k] = $event_meta[$k];
         
+        // Load the colors
+        foreach ( array_slice( EBO::get_options(), 4, 9 ) as $k => $v )
+            $event[ str_replace( 'eventbrite_', '', $k ) ] = str_replace( '#', '', $v );
+        
         // Convert UTC to GMT for Eventbrite
         $event['timezone'] = preg_replace( '/UTC/', 'GMT', $event_meta['timezone'] );
         
