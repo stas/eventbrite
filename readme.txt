@@ -6,7 +6,7 @@ Tested up to: WordPress 3.1.1
 Stable tag: 0.1
 Donate link: http://stas.nerd.ro/pub/donate/
 
-Manage events using Eventbrite with WordPress
+Manage events using Eventbrite with WordPress (WIP)
 
 == Description ==
 
